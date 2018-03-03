@@ -16,7 +16,7 @@
 ;; TODO: Can we import process on require block
 (def process js/process)
 
-(def SCOPE ["https://www.googleapis.com/auth/youtube.readonly"])
+(def SCOPE ["https://www.googleapis.com/auth/youtube"])
 (def TOKEN-DIR "./.credentials/")
 (def TOKEN-PATH (str TOKEN-DIR "youtube.json"))
 (def SECRET-PATH)
@@ -57,9 +57,9 @@
         (prn :error err))
       (if token
         (do
-          (set! client.-credentials token)
+          (.setCredentials client token)
           (save-token token)
-          (cb))))))
+          (cb client))))))
 
 
 
@@ -80,10 +80,15 @@
                    (.close rl)
                    (get-token client code cb))))))
 
+(defn get-youtube-svc [auth]
+  (let [gapi (.-google google)]
+     (.youtube
+      gapi
+      (clj->js {:version "v3"
+                :auth auth}))))
+
 (defn get-channel [auth]
-  (let [gapi (.-google google)
-        svc (.youtube gapi (clj->js {:version "v3"
-                                     :auth auth}))]
+  (let [svc (get-youtube-svc auth)]
     (def yc auth)
     (def ys svc)
     (svc.channels.list
@@ -95,6 +100,32 @@
           (prn :get-chan-succ res))))))
 
 
+(defn upload-video [auth]
+  (let [filename "bunny.mp4"
+        svc (get-youtube-svc auth)
+        title "for test"
+        desc "vid desc"
+        privacy "private"]
+    (svc.videos.insert
+      (clj->js
+        {:part "id,snippet,status"
+         :notifySubscribers false
+         :resource
+         {:snippet {:title title
+                    :description desc}
+          :status {:privacyStatus privacy}}
+         :media
+         {:body (.createReadStream fs filename)}})
+      (fn [err data]
+        (if err
+          (do
+            (def e err)
+            (prn :upload-error err))
+
+          (do
+            (prn :upload-success data)))))))
+
+
 (defn authorize [cred cb]
   (let [client-secret (aget cred "installed" "client_secret")
         client-id (aget cred "installed" "client_id")
@@ -104,9 +135,8 @@
     (if-let [token (read-prev-token)]
       (do
         (.setCredentials client token)
-        (cb client)
-        client)
-      (get-new-token client #(prn :get-token-done %)))))
+        (cb client))
+      (get-new-token client cb))))
 
 (defn server []
   (mount/start)
