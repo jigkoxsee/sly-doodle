@@ -19,3 +19,4 @@ pom.xml.asc
 *.iml
 client_secret.json
 bunny.mp4
+tmp-vdo/

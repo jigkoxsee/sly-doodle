@@ -100,12 +100,13 @@
           (prn :get-chan-succ res))))))
 
 
-(defn upload-video [auth]
-  (let [filename "bunny.mp4"
+(defn upload-video [filename auth]
+  (let [;filename "./tmp-vdo/omd.mp4"
         svc (get-youtube-svc auth)
         title "for test"
         desc "vid desc"
         privacy "private"]
+    (prn :upload-video)
     (svc.videos.insert
       (clj->js
         {:part "id,snippet,status"
@@ -116,6 +117,11 @@
           :status {:privacyStatus privacy}}
          :media
          {:body (.createReadStream fs filename)}})
+      (clj->js
+        {:onUploadProgress
+         (fn [evt]
+           (let [bytes-read (aget evt "bytesRead")]
+             (prn :upload-progress bytes-read)))})
       (fn [err data]
         (if err
           (do
