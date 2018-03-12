@@ -10,6 +10,9 @@
                  [mount "0.1.11"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.9.946"]
+                 [prismatic/schema "1.1.7"]
+                 [metosin/schema-tools "0.10.0"]
+                 [camel-snake-kebab "0.4.0"]
                  ;; needed for JDK 9 compatibility
                  [javax.xml.bind/jaxb-api "2.3.0"]]
   :min-lein-version "2.0.0"
